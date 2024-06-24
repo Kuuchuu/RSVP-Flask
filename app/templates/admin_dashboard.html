@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <script>
+        function showConfirmation(entityId, type) {
+            const deleteButton = document.getElementById(`delete-btn-${type}-${entityId}`);
+            const confirmBox = document.getElementById(`confirm-box-${type}-${entityId}`);
+            deleteButton.style.display = 'none';
+            confirmBox.style.display = 'inline';
+        }
+
+        function cancelDeletion(entityId, type) {
+            const deleteButton = document.getElementById(`delete-btn-${type}-${entityId}`);
+            const confirmBox = document.getElementById(`confirm-box-${type}-${entityId}`);
+            deleteButton.style.display = 'inline';
+            confirmBox.style.display = 'none';
+        }
+    </script>
+</head>
+<body>
+    <h1>RSVP List</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Guests</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rsvp in rsvps %}
+            <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
+                <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
+                <td>{{ rsvp.phone }}</td>
+                <td>{{ rsvp.email }}</td>
+                <td>{{ rsvp.guests }}</td>
+                <td>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                        <button type="submit" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
+                    </form>
+                    <button id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')">Delete</button>
+                    <div id="confirm-box-rsvp-{{ rsvp.id }}" style="display:none;">
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="text" name="confirm_email" placeholder="Confirm Email" required>
+                            <button type="submit" name="delete_rsvp" value="1">Confirm Delete</button>
+                            <button type="button" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Change Password</h2>
+    <form method="POST">
+        <input type="hidden" name="change_password" value="1">
+        <label for="current_password">Current Password:</label>
+        <input type="password" id="current_password" name="current_password" required><br>
+        <label for="new_password">New Password:</label>
+        <input type="password" id="new_password" name="new_password" required><br>
+        <label for="confirm_new_password">Confirm New Password:</label>
+        <input type="password" id="confirm_new_password" name="confirm_new_password" required><br>
+        <button type="submit">Change Password</button>
+    </form>
+
+    <h2>Admin List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for admin in admins %}
+            <tr>
+                <td>{{ admin.username }}</td>
+                <td>{{ 'Yes' if admin.is_active else 'No' }}</td>
+                <td>
+                    {% if admin.is_active and admin.id != current_user.id %}
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                        <button type="submit" name="disable_admin" value="1">Disable</button>
+                    </form>
+                    {% endif %}
+                    {% if admin.id != current_user.id %}
+                    <button id="delete-btn-admin-{{ admin.id }}" onclick="showConfirmation({{ admin.id }}, 'admin')">Delete</button>
+                    <div id="confirm-box-admin-{{ admin.id }}" style="display:none;">
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                            <input type="text" name="confirm_username" placeholder="Confirm Username" required>
+                            <button type="submit" name="delete_admin" value="1">Confirm Delete</button>
+                            <button type="button" onclick="cancelDeletion({{ admin.id }}, 'admin')">Cancel</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>

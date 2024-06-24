@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ header }}</h1>
+    <h2>{{ subheader }}</h2>
+    <a href="{{ url_for('rsvp') }}">RSVP</a><br>
+    {% if registries %}
+    <h3>Registries</h3>
+    {% endif %}
+    {% for registry in registries %}
+        <a href="{{ registry.url }}">{{ registry.name }}</a><br>
+    {% endfor %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+</body>
+</html>
