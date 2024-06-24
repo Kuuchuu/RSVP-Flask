@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from dotenv import load_dotenv
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash

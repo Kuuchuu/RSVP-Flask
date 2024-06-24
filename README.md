@@ -15,7 +15,8 @@ docker build -t rsvp .
 
 ```bash
 docker volume create rsvp_data
-docker run -d -p 5000:5000 --name rsvp_test \
+docker run -d -p 5000:5000 --name rsvp \
+--restart unless-stopped \
 -e RSVP_TITLE="My Wedding" \
 -e RSVP_HEADER="Welcome to Our Wedding RSVP" \
 -e RSVP_SUBHEADER="Please let us know if you can join us" \
@@ -28,4 +29,10 @@ docker run -d -p 5000:5000 --name rsvp_test \
 -e RSVP_REGISTRY5="Crate & Barrel|http://example.com/registry5" \
 -v rsvp_data:/app/instance \
 rsvp
+```
+
+### Create Admin User
+
+```bash
+docker exec -it rsvp python /app/create_admin.py
 ```

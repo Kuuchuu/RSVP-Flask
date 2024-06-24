@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import re
 import getpass
 from app import app, db, Admin
