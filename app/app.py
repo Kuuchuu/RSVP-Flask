@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-from dotenv import load_dotenv
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 import re
+import png
+import pyqrcode
+import random
+import smtplib
+from dotenv import load_dotenv
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from io import BytesIO
+from PIL import Image
 from sqlalchemy import inspect
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
@@ -24,7 +32,8 @@ login_manager.init_app(app)
 
 RSVP_TITLE = strip_quotes(os.getenv('RSVP_TITLE', 'RSVP to our Wedding'))
 RSVP_HEADER = strip_quotes(os.getenv('RSVP_HEADER', 'Wedding RSVP'))
-RSVP_SUBHEADER = strip_quotes(os.getenv('RSVP_SUBHEADER', 'Please fill out the form below to RSVP'))
+RSVP_SUBHEADER = strip_quotes(os.getenv('RSVP_SUBHEADER', 'November 04, 2099 • Denver, CO'))
+RSVP_DESCRIPTION = strip_quotes(os.getenv('RSVP_DESCRIPTION', 'Please fill out the form below to RSVP'))
 
 def get_registries():
     registries = []
@@ -48,8 +57,10 @@ class RSVP(db.Model):
 class Admin(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notifications = db.Column(db.Boolean, default=True, nullable=False)
 
     def get_id(self):
         return self.id
@@ -70,12 +81,76 @@ def validate_password(password):
 def validate_phone(phone):
     return re.match(r'^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$', phone)
 
+def send_email(subject, body, to_addresses):
+    smtp_server = strip_quotes(os.getenv('RSVP_SMTP_SERVER'))
+    smtp_port = strip_quotes(os.getenv('RSVP_SMTP_PORT'))
+    smtp_username = strip_quotes(os.getenv('RSVP_SMTP_USERNAME'))
+    smtp_password = strip_quotes(os.getenv('RSVP_SMTP_PASSWORD'))
+    from_address = strip_quotes(os.getenv('RSVP_SMTP_FROM_ADDRESS'))
+
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['To'] = ", ".join(to_addresses)
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.sendmail(from_address, to_addresses, msg.as_string())
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+@app.route('/generate_qr_code', methods=['POST'])
+@login_required
+def generate_qr_code():
+    first_name = request.form.get('first_name').strip()
+    last_name = request.form.get('last_name').strip()
+    email = request.form.get('email').strip()
+    phone = request.form.get('phone').strip()
+    guests = request.form.get('guests').strip()
+
+    rsvp_url = url_for('rsvp', _external=True, first_name=first_name, last_name=last_name, email=email, phone=phone, guests=guests)
+    qr = pyqrcode.create(rsvp_url)
+
+    buffer = BytesIO()
+    qr.png(buffer, scale=10)
+    buffer.seek(0)
+
+    qr_image = Image.open(buffer)
+
+    overlay_path = os.path.join('static', 'qrcode.png')
+    if os.path.exists(overlay_path):
+        overlay_image = Image.open(overlay_path).convert("RGBA")
+
+        overlay_size = (qr_image.size[0] // 5, qr_image.size[1] // 5)
+        overlay_image = overlay_image.resize(overlay_size, Image.LANCZOS)
+
+        pos = ((qr_image.size[0] - overlay_image.size[0]) // 2, (qr_image.size[1] - overlay_image.size[1]) // 2)
+
+        qr_image.paste(overlay_image, pos, overlay_image)
+
+    result_buffer = BytesIO()
+    qr_image.save(result_buffer, format="PNG")
+    result_buffer.seek(0)
+
+    filename = f"{first_name.lower()}_{last_name.lower()}.png"
+    return send_file(result_buffer, mimetype='image/png', as_attachment=True, download_name=filename)
+
 @app.route('/')
 def index():
-    return render_template('index.html', title=RSVP_TITLE, header=RSVP_HEADER, subheader=RSVP_SUBHEADER, registries=RSVP_REGISTRY)
+    return render_template('index.html', title=RSVP_TITLE, header=RSVP_HEADER, subheader=RSVP_SUBHEADER, description=RSVP_DESCRIPTION, registries=RSVP_REGISTRY)
 
 @app.route('/rsvp', methods=['GET', 'POST'])
 def rsvp():
+    placeholders = [
+        {"first_name": "Jane", "last_name": "Doe", "email": "Jane.Doe@example.net"},
+        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"}
+    ]
+    placeholder = random.choice(placeholders)
+
     if request.method == 'POST':
         first_name = request.form.get('first_name').strip()
         last_name = request.form.get('last_name').strip()
@@ -85,26 +160,41 @@ def rsvp():
 
         if not first_name or not last_name or not email or not phone or not guests:
             flash('All fields are required.', 'danger')
-            return render_template('rsvp.html')
+            return render_template('rsvp.html', placeholder=placeholder)
 
         if not validate_phone(phone):
             flash('Invalid phone number format.', 'danger')
-            return render_template('rsvp.html')
+            return render_template('rsvp.html', placeholder=placeholder)
 
         if not guests.isdigit() or int(guests) < 1:
             flash('Number of guests must be a positive integer.', 'danger')
-            return render_template('rsvp.html')
-        
+            return render_template('rsvp.html', placeholder=placeholder)
+
         if RSVP.query.filter_by(first_name=first_name, last_name=last_name).first() or RSVP.query.filter_by(email=email).first():
             flash('You have already submitted your RSVP with this name or email.', 'warning')
         else:
             new_rsvp = RSVP(first_name=first_name, last_name=last_name, email=email, phone=phone, guests=int(guests))
             db.session.add(new_rsvp)
             db.session.commit()
+
+            if admin_emails := [
+                admin.email
+                for admin in Admin.query.filter_by(notifications=True).all()
+            ]:
+                subject = "New RSVP Submission"
+                body = f"A new RSVP has been submitted:\n\nName: {first_name} {last_name}\nEmail: {email}\nPhone: {phone}\nGuests: {guests}"
+                send_email(subject, body, admin_emails)
+
             flash('RSVP submitted successfully!', 'success')
             return redirect(url_for('index'))
-    
-    return render_template('rsvp.html')
+
+    first_name = request.args.get('first_name', '')
+    last_name = request.args.get('last_name', '')
+    email = request.args.get('email', '')
+    phone = request.args.get('phone', '')
+    guests = request.args.get('guests', '')
+
+    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, phone=phone, guests=guests)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
@@ -125,6 +215,8 @@ def admin_dashboard():
     inspector = inspect(db.engine)
     rsvp_table_exists = inspector.has_table("rsvp")
     admin_table_exists = inspector.has_table("admin")
+
+    qr_code_url = None
 
     if request.method == 'POST':
         if 'change_password' in request.form:
@@ -175,10 +267,17 @@ def admin_dashboard():
                 flash(f'RSVP for {confirm_email} has been deleted.', 'success')
             else:
                 flash('Email does not match. RSVP not deleted.', 'danger')
-
+        elif 'toggle_notifications' in request.form:
+            admin_id = request.form.get('admin_id')
+            notifications = 'notifications' in request.form
+            if admin_id == str(current_user.id):
+                current_user.notifications = notifications
+                db.session.commit()
+                flash('Notifications setting updated.', 'success')
+    
     rsvps = RSVP.query.all() if rsvp_table_exists else []
     admins = Admin.query.all() if admin_table_exists else []
-    return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins)
+    return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins, qr_code_url=qr_code_url)
 
 @app.route('/logout')
 @login_required

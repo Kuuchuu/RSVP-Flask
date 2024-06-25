@@ -13,18 +13,22 @@ def validate_password(password):
         and re.search(r'[@$!%*?&~]', password)
     )
 
-def create_admin(username, password):
+def create_admin(username, email, password, notifications=True):
     if Admin.query.filter_by(username=username).first():
         print(f"Username '{username}' already exists. Please choose a different username.")
         return False
+    if Admin.query.filter_by(email=email).first():
+        print(f"Email '{email}' already exists. Please choose a different email.")
+        return False
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-    admin = Admin(username=username, password=hashed_password)
+    admin = Admin(username=username, email=email, password=hashed_password, notifications=notifications)
     db.session.add(admin)
     db.session.commit()
     return True
 
 if __name__ == '__main__':
     username = input("Enter admin username: ")
+    email = input("Enter admin email: ")
     
     while True:
         password = getpass.getpass("Enter admin password: ")
@@ -41,7 +45,7 @@ if __name__ == '__main__':
         break
     
     with app.app_context():
-        if create_admin(username, password):
+        if create_admin(username, email, password):
             print("Admin user created successfully!")
         else:
             print("Failed to create admin user.")

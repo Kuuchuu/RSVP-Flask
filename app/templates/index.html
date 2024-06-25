@@ -3,25 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='reactivity.js') }}"></script>
 </head>
 <body>
-    <h1>{{ header }}</h1>
-    <h2>{{ subheader }}</h2>
-    <a href="{{ url_for('rsvp') }}">RSVP</a><br>
-    {% if registries %}
-    <h3>Registries</h3>
-    {% endif %}
-    {% for registry in registries %}
-        <a href="{{ registry.url }}">{{ registry.name }}</a><br>
-    {% endfor %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul>
-        {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
+    <div class="h0">{{ header }}</div>
+    <div class="container">
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <h1>{{ subheader }}</h1>
+        <h2>{{ description }}</h2>
+        <form action="{{ url_for('rsvp') }}" method="get">
+            <button type="submit">RSVP</button>
+        </form>
+        {% if registries %}
+        <h3>Registries</h3>
+        {% endif %}
+        {% for registry in registries %}
+            <a class="registry-link" href="{{ registry.url }}">{{ registry.name }}</a>
         {% endfor %}
-        </ul>
-    {% endif %}
-    {% endwith %}
+    </div>
 </body>
 </html>
