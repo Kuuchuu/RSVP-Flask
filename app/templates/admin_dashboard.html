@@ -114,6 +114,15 @@
                 <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1 (optional)"><br>
                 <button type="submit">Generate Personalized QR Code</button>
             </form>
+            <hr>
+            <form method="GET" action="{{ url_for('download_template_csv') }}">
+                <button type="submit">Download Template CSV</button>
+            </form>
+            <form method="POST" action="{{ url_for('generate_qr_codes_from_csv') }}" enctype="multipart/form-data">
+                <label for="csv_file">Upload CSV File:</label>
+                <input type="file" id="csv_file" name="csv_file" accept=".csv" required><br>
+                <button type="submit">Generate QR Codes from CSV</button>
+            </form>
             {% if qr_code_url %}
             <div>
                 <h3>Generated QR Code</h3>

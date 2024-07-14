@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import re
+import csv
+import zipfile
 import png
 import pyqrcode
 import random
@@ -12,9 +14,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from io import BytesIO
+from io import StringIO
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -26,6 +30,7 @@ def strip_quotes(value):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = strip_quotes(os.getenv('RSVP_SQLKEY', 'InsecureRSVPSQLPassword_ChangeMe!'))
 app.config['SQLALCHEMY_DATABASE_URI'] = strip_quotes(os.getenv('RSVP_DATABASE_URI', 'sqlite:///rsvp.db'))
+app.config['UPLOAD_FOLDER'] = 'uploads'
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -190,6 +195,109 @@ def generate_qr_code():
 
     filename = f"{first_name.lower()}_{last_name.lower()}.png"
     return send_file(result_buffer, mimetype='image/png', as_attachment=True, download_name=filename)
+
+@app.route('/download_template_csv')
+@login_required
+def download_template_csv():
+    template_csv = [
+        ['first_name', 'last_name', 'email', 'phone', 'guests']
+    ]
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerows(template_csv)
+    buffer.seek(0)
+    
+    return send_file(BytesIO(buffer.getvalue().encode()), mimetype='text/csv', as_attachment=True, download_name='rsvp_template.csv')
+
+@app.route('/generate_qr_codes_from_csv', methods=['POST'])
+@login_required
+def generate_qr_codes_from_csv():
+    if 'csv_file' not in request.files:
+        flash('No file part', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    file = request.files['csv_file']
+    if file.filename == '':
+        flash('No selected file', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if file and file.filename.endswith('.csv'):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        with open(filepath, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)
+            qr_codes = []
+            for row in reader:
+                first_name, last_name = row[0], row[1]
+                email = row[2] if len(row) > 2 else ''
+                phone = row[3] if len(row) > 3 else ''
+                guests = row[4] if len(row) > 4 else ''
+
+                rsvp_url = url_for('rsvp', _external=True, first_name=first_name, last_name=last_name, email=email, phone=phone, guests=guests)
+                qr = pyqrcode.create(rsvp_url)
+
+                buffer = BytesIO()
+                qr.png(buffer, scale=10)
+                buffer.seek(0)
+
+                qr_image = Image.open(buffer).convert("RGBA")
+
+                overlay_image_path = os.path.join('static', 'qrcode.png')
+                rsvp_qr_image = os.getenv('RSVP_QR_IMAGE', 'true').lower() == 'true'
+
+                if rsvp_qr_image and os.path.exists(overlay_image_path):
+                    overlay_image = Image.open(overlay_image_path).convert("RGBA")
+                    overlay_size = (qr_image.size[0] // 5, qr_image.size[1] // 5)
+                    overlay_image = overlay_image.resize(overlay_size, Image.LANCZOS)
+                    pos = ((qr_image.size[0] - overlay_image.size[0]) // 2, (qr_image.size[1] - overlay_image.size[1]) // 2)
+                    qr_image.paste(overlay_image, pos, overlay_image)
+                else:
+                    draw = ImageDraw.Draw(qr_image)
+                    initials = f"{first_name[0].upper()}{last_name[0].upper()}"
+                    font_size = qr_image.size[0] // 5
+
+                    try:
+                        font = ImageFont.truetype(os.path.join('static', 'qrcode.ttf'), font_size)
+                    except IOError:
+                        font = ImageFont.load_default()
+
+                    text_box = draw.textbbox((0, 0), initials, font=font)
+                    text_width = text_box[2] - text_box[0]
+                    text_height = text_box[3] - text_box[1]
+                    
+                    extra_padding = 10
+                    rectangle_width = text_width + extra_padding
+                    rectangle_height = text_height + extra_padding
+
+                    text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2)
+
+                    rectangle_pos = (text_pos[0] - extra_padding // 2, text_pos[1] - extra_padding // 2)
+                    draw.rectangle([rectangle_pos, (rectangle_pos[0] + rectangle_width, rectangle_pos[1] + rectangle_height)], fill="white")
+
+                    text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2.31 - font_size // 8)
+                    draw.text(text_pos, initials, font=font, fill=(0, 0, 0, 255))
+
+                qr_buffer = BytesIO()
+                qr_image.save(qr_buffer, format="PNG")
+                qr_buffer.seek(0)
+
+                qr_codes.append((f"{first_name.lower()}_{last_name.lower()}.png", qr_buffer.read()))
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            for filename, data in qr_codes:
+                zip_file.writestr(filename, data)
+        zip_buffer.seek(0)
+
+        os.remove(filepath)
+
+        return send_file(zip_buffer, mimetype='application/zip', as_attachment=True, download_name='qr_codes.zip')
+
+    flash('Invalid file format. Please upload a CSV file.', 'danger')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/')
 def index():

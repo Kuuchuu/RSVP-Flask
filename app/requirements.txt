@@ -6,3 +6,4 @@ pyqrcode
 pypng
 Pillow
 gunicorn
+Werkzeug
