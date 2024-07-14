@@ -453,6 +453,34 @@ def admin_dashboard():
     admins = Admin.query.all() if admin_table_exists else []
     return render_template('admin_dashboard.html', attending_rsvps=attending_rsvps, not_attending_rsvps=not_attending_rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
 
+@app.route('/create_admin', methods=['POST'])
+@login_required
+def create_admin():
+    username = request.form.get('new_admin_username').strip()
+    email = request.form.get('new_admin_email').strip()
+    password = request.form.get('new_admin_password').strip()
+
+    if not username or not email or not password:
+        flash('All fields are required to create a new admin.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if not validate_password(password):
+        flash('Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&~).', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    existing_admin = Admin.query.filter((Admin.username == username) | (Admin.email == email)).first()
+    if existing_admin:
+        flash('An admin with this username or email already exists.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    new_admin = Admin(username=username, email=email, password=hashed_password)
+    db.session.add(new_admin)
+    db.session.commit()
+
+    flash('New admin created successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 @app.route('/<first_name>.<last_name>')
 def redirect_to_rsvp(first_name, last_name):
     return redirect(url_for('rsvp', first_name=first_name, last_name=last_name))
