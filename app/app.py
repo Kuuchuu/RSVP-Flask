@@ -103,6 +103,33 @@ def send_email(subject, body, to_addresses):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+@app.route('/generate_generic_qr_code', methods=['POST'])
+@login_required
+def generate_generic_qr_code():
+    base_url = url_for('index', _external=True)
+    qr = pyqrcode.create(base_url)
+
+    buffer = BytesIO()
+    qr.png(buffer, scale=10)
+    buffer.seek(0)
+
+    qr_image = Image.open(buffer).convert("RGBA")
+    
+    overlay_image_path = os.path.join('static', 'qrcode.png')
+    
+    if os.path.exists(overlay_image_path):
+        overlay_image = Image.open(overlay_image_path).convert("RGBA")
+        overlay_size = (qr_image.size[0] // 5, qr_image.size[1] // 5)
+        overlay_image = overlay_image.resize(overlay_size, Image.LANCZOS)
+        pos = ((qr_image.size[0] - overlay_image.size[0]) // 2, (qr_image.size[1] - overlay_image.size[1]) // 2)
+        qr_image.paste(overlay_image, pos, overlay_image)
+    
+    result_buffer = BytesIO()
+    qr_image.save(result_buffer, format="PNG")
+    result_buffer.seek(0)
+
+    return send_file(result_buffer, mimetype='image/png', as_attachment=True, download_name="generic_qr_code.png")
+
 @app.route('/generate_qr_code', methods=['POST'])
 @login_required
 def generate_qr_code():
@@ -133,7 +160,7 @@ def generate_qr_code():
     else:
         draw = ImageDraw.Draw(qr_image)
         initials = f"{first_name[0].upper()}{last_name[0].upper()}"
-        font_size = qr_image.size[0] // 5  # Adjust the font size relative to the QR code size
+        font_size = qr_image.size[0] // 5
 
         try:
             font = ImageFont.truetype(os.path.join('static', 'qrcode.ttf'), font_size)
@@ -144,18 +171,15 @@ def generate_qr_code():
         text_width = text_box[2] - text_box[0]
         text_height = text_box[3] - text_box[1]
         
-        # Increase the size of the white rectangle
         extra_padding = 10
         rectangle_width = text_width + extra_padding
         rectangle_height = text_height + extra_padding
 
         text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2)
 
-        # Create a white rectangle in the center to ensure the initials are visible
         rectangle_pos = (text_pos[0] - extra_padding // 2, text_pos[1] - extra_padding // 2)
         draw.rectangle([rectangle_pos, (rectangle_pos[0] + rectangle_width, rectangle_pos[1] + rectangle_height)], fill="white")
 
-        # Adjust the text position to center it vertically within the rectangle
         text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2.31 - font_size // 8)
         draw.text(text_pos, initials, font=font, fill=(0, 0, 0, 255))
 

@@ -61,6 +61,10 @@
 
         <h2 class="toggle-section">Generate QR Code</h2>
         <div class="toggle-content" style="display: none;">
+            <form method="POST" action="{{ url_for('generate_generic_qr_code') }}">
+                <button type="submit">Generate Generic QR Code</button>
+            </form>
+            <hr>
             <form method="POST" action="{{ url_for('generate_qr_code') }}">
                 <label for="first_name">First Name:</label>
                 <input type="text" id="first_name" name="first_name" placeholder="{{ placeholder.first_name }}" required><br>
@@ -72,7 +76,7 @@
                 <input type="tel" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx (optional)"><br>
                 <label for="guests">Number of Guests:</label>
                 <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1 (optional)"><br>
-                <button type="submit">Generate QR Code</button>
+                <button type="submit">Generate Personalized QR Code</button>
             </form>
             {% if qr_code_url %}
             <div>
