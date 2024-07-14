@@ -50,8 +50,9 @@ class RSVP(db.Model):
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
-    guests = db.Column(db.Integer, nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
+    guests = db.Column(db.Integer, nullable=True)
+    attending = db.Column(db.Boolean, nullable=False)
     crossed_out = db.Column(db.Boolean, default=False, nullable=False)
 
 class Admin(UserMixin, db.Model):
@@ -206,25 +207,29 @@ def rsvp():
         first_name = request.form.get('first_name').strip()
         last_name = request.form.get('last_name').strip()
         email = request.form.get('email').strip()
-        phone = request.form.get('phone').strip()
-        guests = request.form.get('guests').strip()
+        attending = request.form.get('attending') == 'yes'
+        phone = request.form.get('phone').strip() if attending else None
+        guests = request.form.get('guests').strip() if attending else None
 
-        if not first_name or not last_name or not email or not phone or not guests:
-            flash('All fields are required.', 'danger')
+        if not first_name or not last_name or not email:
+            flash('First name, last name, and email are required.', 'danger')
             return render_template('rsvp.html', placeholder=placeholder)
 
-        if not validate_phone(phone):
-            flash('Invalid phone number format.', 'danger')
-            return render_template('rsvp.html', placeholder=placeholder)
-
-        if not guests.isdigit() or int(guests) < 1:
-            flash('Number of guests must be a positive integer.', 'danger')
-            return render_template('rsvp.html', placeholder=placeholder)
+        if attending:
+            if not phone or not guests:
+                flash('Phone number and number of guests are required if attending.', 'danger')
+                return render_template('rsvp.html', placeholder=placeholder)
+            if not validate_phone(phone):
+                flash('Invalid phone number format.', 'danger')
+                return render_template('rsvp.html', placeholder=placeholder)
+            if not guests.isdigit() or int(guests) < 1:
+                flash('Number of guests must be a positive integer.', 'danger')
+                return render_template('rsvp.html', placeholder=placeholder)
 
         if RSVP.query.filter_by(first_name=first_name, last_name=last_name).first() or RSVP.query.filter_by(email=email).first():
             flash('You have already submitted your RSVP with this name or email.', 'warning')
         else:
-            new_rsvp = RSVP(first_name=first_name, last_name=last_name, email=email, phone=phone, guests=int(guests))
+            new_rsvp = RSVP(first_name=first_name, last_name=last_name, email=email, phone=phone, guests=int(guests) if guests else None, attending=attending)
             db.session.add(new_rsvp)
             db.session.commit()
 
@@ -233,7 +238,7 @@ def rsvp():
                 for admin in Admin.query.filter_by(notifications=True).all()
             ]:
                 subject = "New RSVP Submission"
-                body = f"A new RSVP has been submitted:\n\nName: {first_name} {last_name}\nEmail: {email}\nPhone: {phone}\nGuests: {guests}"
+                body = f"A new RSVP has been submitted:\n\nName: {first_name} {last_name}\nEmail: {email}\nAttending: {'Yes' if attending else 'No'}\nPhone: {phone}\nGuests: {guests}"
                 send_email(subject, body, admin_emails)
 
             flash('RSVP submitted successfully!', 'success')
@@ -242,10 +247,8 @@ def rsvp():
     first_name = request.args.get('first_name', '')
     last_name = request.args.get('last_name', '')
     email = request.args.get('email', '')
-    phone = request.args.get('phone', '')
-    guests = request.args.get('guests', '')
 
-    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, phone=phone, guests=guests)
+    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
@@ -332,9 +335,15 @@ def admin_dashboard():
                 db.session.commit()
                 flash('Notification setting updated.', 'success')
     
-    rsvps = RSVP.query.all() if rsvp_table_exists else []
+    if rsvp_table_exists:
+        attending_rsvps = RSVP.query.filter_by(attending=True).all()
+        not_attending_rsvps = RSVP.query.filter_by(attending=False).all()
+    else:
+        attending_rsvps = []
+        not_attending_rsvps = []
+
     admins = Admin.query.all() if admin_table_exists else []
-    return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
+    return render_template('admin_dashboard.html', attending_rsvps=attending_rsvps, not_attending_rsvps=not_attending_rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
 
 @app.route('/<first_name>.<last_name>')
 def redirect_to_rsvp(first_name, last_name):

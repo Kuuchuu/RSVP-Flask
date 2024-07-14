@@ -178,6 +178,26 @@ a.registry-link:hover {
     margin-bottom: 20px;
 }
 
+.radio-buttons {
+    display: flex;
+    gap: 10px;
+}
+.radio-buttons input[type="radio"] {
+    display: none;
+}
+.radio-buttons label {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+.radio-buttons input[type="radio"]:checked + label {
+    background-color: #d8a8a8;
+    color: white;
+    border-color: #d8a8a8;
+}
+
 #flash-messages {
     position: fixed;
     top: 20px;
@@ -214,4 +234,69 @@ a.registry-link:hover {
 
 #flash-messages .warning {
     background-color: #ffa37847;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 15px;
+        box-shadow: none;
+    }
+
+    header {
+        padding: 10px 0;
+        margin-bottom: 15px;
+    }
+
+    header h1 {
+        font-size: 2em;
+    }
+
+    header h2 {
+        font-size: 1.2em;
+    }
+
+    form input, form select, form button {
+        font-size: 0.9em;
+        padding: 8px;
+    }
+
+    table, th, td {
+        padding: 8px;
+    }
+
+    th {
+        font-size: 0.9em;
+    }
+
+    td {
+        font-size: 0.9em;
+    }
+
+    a {
+        padding: 8px 15px;
+        margin: 3px 0;
+    }
+
+    .toggle-section {
+        padding: 8px;
+    }
+
+    .toggle-content {
+        padding: 8px;
+        margin-bottom: 15px;
+    }
+
+    .radio-buttons label {
+        padding: 8px 15px;
+    }
+
+    #flash-messages {
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+    }
 }

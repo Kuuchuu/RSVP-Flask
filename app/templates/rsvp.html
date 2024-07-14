@@ -29,10 +29,19 @@
             <input type="text" id="last_name" name="last_name" value="{{ last_name }}" placeholder="{{ placeholder.last_name }}" required><br>
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" value="{{ email }}" placeholder="{{ placeholder.email }}" required><br>
-            <label for="phone">Phone Number:</label>
-            <input type="tel" id="phone" name="phone" value="{{ phone }}" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx" required><br>
-            <label for="guests">Number of Guests:</label>
-            <input type="number" min="1" max="20" id="guests" name="guests" value="{{ guests }}" placeholder="1" required><br>
+            <label>Will you be attending?</label><br>
+            <div class="radio-buttons">
+                <input type="radio" id="attending_yes" name="attending" value="yes" onclick="toggleFields()" required>
+                <label for="attending_yes">Yes</label>
+                <input type="radio" id="attending_no" name="attending" value="no" onclick="toggleFields()" required>
+                <label for="attending_no">No</label>
+            </div>
+            <div id="attending-fields" style="display:none;">
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx"><br>
+                <label for="guests">Number of Guests:</label>
+                <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1"><br>
+            </div>
             <button type="submit">Submit</button>
         </form>
         <a href="{{ url_for('index') }}">Back to Home</a>

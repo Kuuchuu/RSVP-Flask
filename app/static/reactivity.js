@@ -51,3 +51,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
+function toggleFields() {
+    const attending = document.querySelector('input[name="attending"]:checked').value;
+    const attendingFields = document.getElementById('attending-fields');
+    attendingFields.style.display = (attending === 'yes') ? 'block' : 'none';
+}

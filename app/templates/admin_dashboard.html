@@ -21,6 +21,7 @@
         </div>
 
         <h1>RSVP List</h1>
+        <h2>Attending</h2>
         <table>
             <thead>
                 <tr>
@@ -32,12 +33,47 @@
                 </tr>
             </thead>
             <tbody>
-                {% for rsvp in rsvps %}
+                {% for rsvp in attending_rsvps %}
                 <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
                     <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
                     <td>{{ rsvp.phone }}</td>
                     <td>{{ rsvp.email }}</td>
                     <td>{{ rsvp.guests }}</td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <button type="submit" id="cross-out-btn-{{ rsvp.id }}" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
+                        </form>
+                        <form method="POST" id="delete-form-rsvp-{{ rsvp.id }}" style="display:inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="hidden" name="delete_rsvp" value="1">
+                            <input type="button" id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')" value="Delete">
+                            <div id="confirm-box-rsvp-{{ rsvp.id }}" style="display:none;">
+                                <input type="text" name="confirm_email" placeholder="Confirm Email" required>
+                                <button type="button" onclick="submitForm('delete-form-rsvp-{{ rsvp.id }}')">Confirm Delete</button>
+                                <button type="button" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Not Attending</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rsvp in not_attending_rsvps %}
+                <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
+                    <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
+                    <td>{{ rsvp.email }}</td>
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
