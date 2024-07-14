@@ -336,6 +336,10 @@ def admin_dashboard():
     admins = Admin.query.all() if admin_table_exists else []
     return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
 
+@app.route('/<first_name>.<last_name>')
+def redirect_to_rsvp(first_name, last_name):
+    return redirect(url_for('rsvp', first_name=first_name, last_name=last_name))
+
 @app.route('/logout')
 @login_required
 def logout():

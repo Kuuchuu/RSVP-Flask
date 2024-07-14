@@ -1,6 +1,8 @@
 # RSVP Flask
 A simple RSVP website built using Flask.
 
+RSVP Short Links: BaseURL/FirstName.LastName
+
 Currently supports up to 5 gift registries.
 
 Theming and email notifications coming soon.
