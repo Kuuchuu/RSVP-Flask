@@ -48,6 +48,7 @@ docker run -d -p 5000:5000 --name rsvp \
 -e RSVP_SMTP_USERNAME="your_smtp_username" \
 -e RSVP_SMTP_PASSWORD="your_smtp_password" \
 -e RSVP_SMTP_FROM_ADDRESS="from@example.com" \
+-e RSVP_QR_IMAGE=true \
 -v rsvp_data:/app/instance \
 rsvp
 ```
@@ -57,3 +58,6 @@ rsvp
 ```bash
 docker exec -it rsvp python /app/create_admin.py
 ```
+
+Default QR Code font: [Playwrite HR](https://fontesk.com/playwrite-hrvatska-font/)
+[Font License](OFL.txt) | Free for commercial use, SIL Open Font License

@@ -12,7 +12,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -119,18 +119,45 @@ def generate_qr_code():
     qr.png(buffer, scale=10)
     buffer.seek(0)
 
-    qr_image = Image.open(buffer)
+    qr_image = Image.open(buffer).convert("RGBA")
 
-    overlay_path = os.path.join('static', 'qrcode.png')
-    if os.path.exists(overlay_path):
-        overlay_image = Image.open(overlay_path).convert("RGBA")
+    overlay_image_path = os.path.join('static', 'qrcode.png')
+    rsvp_qr_image = os.getenv('RSVP_QR_IMAGE', 'true').lower() == 'true'
 
+    if rsvp_qr_image and os.path.exists(overlay_image_path):
+        overlay_image = Image.open(overlay_image_path).convert("RGBA")
         overlay_size = (qr_image.size[0] // 5, qr_image.size[1] // 5)
         overlay_image = overlay_image.resize(overlay_size, Image.LANCZOS)
-
         pos = ((qr_image.size[0] - overlay_image.size[0]) // 2, (qr_image.size[1] - overlay_image.size[1]) // 2)
-
         qr_image.paste(overlay_image, pos, overlay_image)
+    else:
+        draw = ImageDraw.Draw(qr_image)
+        initials = f"{first_name[0].upper()}{last_name[0].upper()}"
+        font_size = qr_image.size[0] // 5  # Adjust the font size relative to the QR code size
+
+        try:
+            font = ImageFont.truetype(os.path.join('static', 'qrcode.ttf'), font_size)
+        except IOError:
+            font = ImageFont.load_default()
+
+        text_box = draw.textbbox((0, 0), initials, font=font)
+        text_width = text_box[2] - text_box[0]
+        text_height = text_box[3] - text_box[1]
+        
+        # Increase the size of the white rectangle
+        extra_padding = 10
+        rectangle_width = text_width + extra_padding
+        rectangle_height = text_height + extra_padding
+
+        text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2)
+
+        # Create a white rectangle in the center to ensure the initials are visible
+        rectangle_pos = (text_pos[0] - extra_padding // 2, text_pos[1] - extra_padding // 2)
+        draw.rectangle([rectangle_pos, (rectangle_pos[0] + rectangle_width, rectangle_pos[1] + rectangle_height)], fill="white")
+
+        # Adjust the text position to center it vertically within the rectangle
+        text_pos = ((qr_image.size[0] - text_width) // 2, (qr_image.size[1] - text_height) // 2.31 - font_size // 8)
+        draw.text(text_pos, initials, font=font, fill=(0, 0, 0, 255))
 
     result_buffer = BytesIO()
     qr_image.save(result_buffer, format="PNG")
@@ -216,6 +243,12 @@ def admin_dashboard():
     rsvp_table_exists = inspector.has_table("rsvp")
     admin_table_exists = inspector.has_table("admin")
 
+    placeholders = [
+        {"first_name": "Jane", "last_name": "Doe", "email": "Jane.Doe@example.net"},
+        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"}
+    ]
+    placeholder = random.choice(placeholders)
+
     qr_code_url = None
 
     if request.method == 'POST':
@@ -273,11 +306,11 @@ def admin_dashboard():
             if admin_id == str(current_user.id):
                 current_user.notifications = notifications
                 db.session.commit()
-                flash('Notifications setting updated.', 'success')
+                flash('Notification setting updated.', 'success')
     
     rsvps = RSVP.query.all() if rsvp_table_exists else []
     admins = Admin.query.all() if admin_table_exists else []
-    return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins, qr_code_url=qr_code_url)
+    return render_template('admin_dashboard.html', rsvps=rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
 
 @app.route('/logout')
 @login_required
