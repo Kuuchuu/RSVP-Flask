@@ -180,6 +180,11 @@
                                 <input type="hidden" name="admin_id" value="{{ admin.id }}">
                                 <button type="submit" name="disable_admin" value="1">Disable</button>
                             </form>
+                            {% elif not admin.is_active %}
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                                <button type="submit" name="enable_admin" value="1">Enable</button>
+                            </form>
                             {% endif %}
                             {% if admin.id != current_user.id %}
                             <form method="POST" id="delete-form-admin-{{ admin.id }}" style="display:inline;">
@@ -208,7 +213,7 @@
                 <input type="password" id="new_admin_password" name="new_admin_password" required><br>
                 <button type="submit">Create Admin</button>
             </form>
-        </div>
+        </div>        
 
         <a href="{{ url_for('logout') }}">Logout</a>
     </div>

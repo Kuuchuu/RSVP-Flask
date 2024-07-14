@@ -409,6 +409,12 @@ def admin_dashboard():
                 admin_to_disable.is_active = False
                 db.session.commit()
                 flash(f'Admin {admin_to_disable.username} has been disabled.', 'success')
+        elif 'enable_admin' in request.form:
+            admin_id = request.form.get('admin_id')
+            if admin_to_enable := Admin.query.get(admin_id):
+                admin_to_enable.is_active = True
+                db.session.commit()
+                flash(f'Admin {admin_to_enable.username} has been enabled.', 'success')
         elif 'delete_admin' in request.form:
             admin_id = request.form.get('admin_id')
             confirm_username = request.form.get('confirm_username').strip()
