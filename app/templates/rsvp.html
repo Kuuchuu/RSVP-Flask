@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>RSVP</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ version }}">
     <script src="{{ url_for('static', filename='reactivity.js') }}"></script>
     {% if turnstile_sitekey %}
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

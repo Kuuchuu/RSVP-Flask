@@ -8,6 +8,7 @@ import pyqrcode
 import random
 import requests
 import smtplib
+import time
 import zipfile
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
@@ -532,6 +533,7 @@ def admin_dashboard():
                     css_content = theme_css_file.read()
                 with open('static/style.css', 'w') as style_css_file:
                     style_css_file.write(css_content)
+            os.utime(os.path.join(app.static_folder, 'style.css'), None)
             flash('Theme updated successfully!', 'success')
     
     if rsvp_table_exists:
@@ -607,6 +609,15 @@ def create_admin():
 @app.route('/<first_name>.<last_name>')
 def redirect_to_rsvp(first_name, last_name):
     return redirect(url_for('rsvp', first_name=first_name, last_name=last_name))
+
+@app.context_processor
+def inject_version():
+    try:
+        style_css_path = os.path.join(app.static_folder, 'style.css')
+        version = int(os.path.getmtime(style_css_path))
+    except OSError:
+        version = int(time.time())
+    return dict(version=version)
 
 @app.route('/logout')
 @login_required
