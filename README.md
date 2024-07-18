@@ -51,6 +51,8 @@ docker run -d -p 5000:5000 --name rsvp \
 -e RSVP_SMTP_PASSWORD="your_smtp_password" \
 -e RSVP_SMTP_FROM_ADDRESS="from@example.com" \
 -e RSVP_QR_IMAGE=true \
+-e RSVP_TURNSTILE_SITEKEY="xxxxxxx" \
+-e RSVP_TURNSTILE_SECRETKEY="xxxxxxx" \
 -v rsvp_data:/app/instance \
 rsvp
 ```

@@ -5,6 +5,9 @@
     <title>RSVP</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='reactivity.js') }}"></script>
+    {% if turnstile_sitekey %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
 </head>
 <body>
     <div class="container">
@@ -42,6 +45,9 @@
                 <label for="guests">Number of Guests:</label>
                 <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1"><br>
             </div>
+            {% if turnstile_sitekey %}
+            <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}"></div>
+            {% endif %}
             <button type="submit">Submit</button>
         </form>
         <a href="{{ url_for('index') }}">Back to Home</a>

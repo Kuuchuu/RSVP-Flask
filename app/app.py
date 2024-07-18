@@ -6,12 +6,13 @@ import glob
 import png
 import pyqrcode
 import random
+import requests
 import smtplib
 import zipfile
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -25,6 +26,8 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 
 def strip_quotes(value):
+    if value is None:
+        return ''
     if value.startswith('"') and value.endswith('"'):
         value = value[1:-1]
     return value
@@ -38,6 +41,9 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+TURNSTILE_SITEKEY = strip_quotes(os.getenv('RSVP_TURNSTILE_SITEKEY'))
+TURNSTILE_SECRETKEY = strip_quotes(os.getenv('RSVP_TURNSTILE_SECRETKEY'))
 
 RSVP_TITLE = strip_quotes(os.getenv('RSVP_TITLE', 'RSVP to our Wedding'))
 RSVP_HEADER = strip_quotes(os.getenv('RSVP_HEADER', 'Wedding RSVP'))
@@ -372,6 +378,23 @@ def rsvp():
                 flash('Number of guests must be a positive integer.', 'danger')
                 return render_template('rsvp.html', placeholder=placeholder)
 
+        if TURNSTILE_SITEKEY and TURNSTILE_SECRETKEY:
+            token = request.form.get('cf-turnstile-response')
+            if not token:
+                flash('Please complete the Turnstile challenge.', 'danger')
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
+            response = requests.post(
+                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                data={
+                    'secret': TURNSTILE_SECRETKEY,
+                    'response': token,
+                    'remoteip': request.remote_addr
+                }
+            )
+            if not response.json().get('success'):
+                flash('Turnstile verification failed. Please try again.', 'danger')
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
+
         if RSVP.query.filter_by(first_name=first_name, last_name=last_name).first() or RSVP.query.filter_by(email=email).first():
             flash('You have already submitted your RSVP with this name or email.', 'warning')
         else:
@@ -422,7 +445,9 @@ def admin_dashboard():
 
     placeholders = [
         {"first_name": "Jane", "last_name": "Doe", "email": "Jane.Doe@example.net"},
-        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"}
+        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"},
+        {"first_name": "Jane", "last_name": "Smith", "email": "Jane.Smith@example.com"},
+        {"first_name": "John", "last_name": "Smith", "email": "John.Smith@example.com"}
     ]
     placeholder = random.choice(placeholders)
 
