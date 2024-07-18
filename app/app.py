@@ -2,16 +2,18 @@
 import os
 import re
 import csv
-import zipfile
+import glob
 import png
 import pyqrcode
 import random
 import smtplib
+import zipfile
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from io import BytesIO
 from io import StringIO
@@ -31,7 +33,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = strip_quotes(os.getenv('RSVP_SQLKEY', 'InsecureRSVPSQLPassword_ChangeMe!'))
 app.config['SQLALCHEMY_DATABASE_URI'] = strip_quotes(os.getenv('RSVP_DATABASE_URI', 'sqlite:///rsvp.db'))
 app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['THEMES_FOLDER'] = 'static/themes'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -71,6 +75,24 @@ class Admin(UserMixin, db.Model):
     def get_id(self):
         return self.id
 
+class Settings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)
+    value = db.Column(db.String(100), nullable=False)
+
+def get_setting(key, default=None):
+    setting = Settings.query.filter_by(key=key).first()
+    return setting.value if setting else default
+
+def set_setting(key, value):
+    setting = Settings.query.filter_by(key=key).first()
+    if setting:
+        setting.value = value
+    else:
+        setting = Settings(key=key, value=value)
+        db.session.add(setting)
+    db.session.commit()
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(Admin, int(user_id))
@@ -108,6 +130,10 @@ def send_email(subject, body, to_addresses):
             server.sendmail(from_address, to_addresses, msg.as_string())
     except Exception as e:
         print(f"Failed to send email: {e}")
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/generate_generic_qr_code', methods=['POST'])
 @login_required
@@ -307,9 +333,21 @@ def index():
 def rsvp():
     placeholders = [
         {"first_name": "Jane", "last_name": "Doe", "email": "Jane.Doe@example.net"},
-        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"}
+        {"first_name": "John", "last_name": "Doe", "email": "John.Doe@example.net"},
+        {"first_name": "Jane", "last_name": "Smith", "email": "Jane.Smith@example.com"},
+        {"first_name": "John", "last_name": "Smith", "email": "John.Smith@example.com"}
     ]
     placeholder = random.choice(placeholders)
+
+    def is_valid_name(name):
+        return name == '' or re.match("^[A-Za-z]+$", name) is not None
+
+    first_name = request.args.get('first_name', '')
+    last_name = request.args.get('last_name', '')
+
+    if not is_valid_name(first_name) or not is_valid_name(last_name):
+        # flash('Invalid name format.', 'danger')
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
         first_name = request.form.get('first_name').strip()
@@ -360,6 +398,9 @@ def rsvp():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    if current_user.is_authenticated:
+        return redirect(url_for('admin_dashboard'))
+
     if request.method == 'POST':
         username = request.form.get('username').strip()
         password = request.form.get('password').strip()
@@ -369,6 +410,7 @@ def admin():
             return redirect(url_for('admin_dashboard'))
         else:
             flash('Invalid credentials or account disabled.', 'danger')
+    
     return render_template('admin_login.html')
 
 @app.route('/admin_dashboard', methods=['GET', 'POST'])
@@ -448,6 +490,24 @@ def admin_dashboard():
                 current_user.notifications = notifications
                 db.session.commit()
                 flash('Notification setting updated.', 'success')
+        elif 'theme' in request.form:
+            selected_theme = request.form.get('theme')
+            if selected_theme == 'custom.css':
+                custom_css = request.form.get('custom_css').strip()
+                with open(os.path.join(app.config['THEMES_FOLDER'], 'custom.css'), 'w') as custom_css_file:
+                    custom_css_file.write(custom_css)
+                set_setting('selected_theme', 'custom.css')
+                with open(os.path.join(app.config['THEMES_FOLDER'], 'custom.css'), 'r') as theme_css_file:
+                    css_content = theme_css_file.read()
+                with open('static/style.css', 'w') as style_css_file:
+                    style_css_file.write(css_content)
+            else:
+                set_setting('selected_theme', selected_theme)
+                with open(os.path.join(app.config['THEMES_FOLDER'], selected_theme), 'r') as theme_css_file:
+                    css_content = theme_css_file.read()
+                with open('static/style.css', 'w') as style_css_file:
+                    style_css_file.write(css_content)
+            flash('Theme updated successfully!', 'success')
     
     if rsvp_table_exists:
         attending_rsvps = RSVP.query.filter_by(attending=True).all()
@@ -457,7 +517,28 @@ def admin_dashboard():
         not_attending_rsvps = []
 
     admins = Admin.query.all() if admin_table_exists else []
-    return render_template('admin_dashboard.html', attending_rsvps=attending_rsvps, not_attending_rsvps=not_attending_rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder)
+
+    current_theme = get_setting('selected_theme', 'light.css')
+    custom_css = ''
+    if current_theme == 'custom.css':
+        with open(os.path.join(app.config['THEMES_FOLDER'], 'custom.css'), 'r') as custom_css_file:
+            custom_css = custom_css_file.read()
+
+    themes = [os.path.basename(theme) for theme in glob.glob(os.path.join(app.config['THEMES_FOLDER'], '*.css'))]
+    return render_template('admin_dashboard.html', attending_rsvps=attending_rsvps, not_attending_rsvps=not_attending_rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder, current_theme=current_theme, custom_css=custom_css, themes=themes)
+
+@app.route('/load_theme_css')
+@login_required
+def load_theme_css():
+    theme = request.args.get('theme', 'light.css')
+    print(f"Requested theme: {theme}")
+    theme_path = os.path.join(app.config['THEMES_FOLDER'], theme)
+    if os.path.isfile(theme_path):
+        with open(theme_path, 'r') as theme_css_file:
+            css_content = theme_css_file.read()
+        return css_content, 200, {'Content-Type': 'text/css'}
+    print(f"Theme path does not exist: {theme_path}")
+    return '', 404
 
 @app.route('/create_admin', methods=['POST'])
 @login_required

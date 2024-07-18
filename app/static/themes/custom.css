@@ -1,0 +1,302 @@
+@import url('https://fonts.googleapis.com/css2?family=Cedarville+Cursive&family=Roboto&display=swap');
+
+body {
+    font-family: 'Arial, sans-serif';
+    background-color: #eee6e1;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    text-align: center;
+    position: relative;
+    z-index: -2;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    width: 100%;
+    position: relative;
+    z-index: -1;
+}
+
+.h0 {
+    font-family: 'Cedarville Cursive', cursive;
+    font-size: 3em;
+    color: #d8a8a8;
+    margin-bottom: -1.05em;
+}
+
+header {
+    background-color: #ffffff;
+    padding: 20px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5em;
+    color: #d8a8a8;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #a67c7c;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #a67c7c;
+}
+
+form input, form select, form button {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 300px;
+}
+
+form button {
+    background-color: #d8a8a8;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+form button:hover {
+    background-color: #a67c7c;
+}
+
+input { 
+    text-align: center; 
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #d8a8a8;
+    color: #ffffff;
+}
+
+td {
+    background-color: #f9f9f9;
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+}
+
+.success {
+    color: green;
+    font-weight: bold;
+}
+
+a {
+    color: #d8a8a8;
+    text-decoration: none;
+    transition: color 0.3s, background-color 0.3s, border 0.3s;
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid #d8a8a8;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+a:hover {
+    color: #ffffff;
+    background-color: #d8a8a8;
+    border-color: #a67c7c;
+}
+
+a.registry-link {
+    background-color: #fff;
+    color: #d8a8a8;
+    border: 1px solid #d8a8a8;
+}
+
+a.registry-link:hover {
+    background-color: #d8a8a8;
+    color: #fff;
+    border-color: #a67c7c;
+}
+
+.toggle-section {
+    cursor: pointer;
+    background-color: #d8a8a8;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.toggle-section:hover {
+    background-color: #a67c7c;
+}
+
+.toggle-content {
+    display: none;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #d8a8a8;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.radio-buttons {
+    display: flex;
+    gap: 10px;
+}
+.radio-buttons input[type="radio"] {
+    display: none;
+}
+.radio-buttons label {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+.radio-buttons input[type="radio"]:checked + label {
+    background-color: #d8a8a8;
+    color: white;
+    border-color: #d8a8a8;
+}
+
+#flash-messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background-color: #d8a8a8;
+    color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 6px 8px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+#flash-messages ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#flash-messages li {
+    padding: 10px;
+    margin: -10px;
+    border-radius: 5px;
+}
+
+#flash-messages .success {
+    background-color: #ffd5d547;
+    color: #fffaf8;
+}
+
+#flash-messages .danger {
+    background-color: #f4433645;
+}
+
+#flash-messages .warning {
+    background-color: #ffa37847;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 15px;
+        box-shadow: none;
+    }
+
+    header {
+        padding: 10px 0;
+        margin-bottom: 15px;
+    }
+
+    header h1 {
+        font-size: 2em;
+    }
+
+    header h2 {
+        font-size: 1.2em;
+    }
+
+    form input, form select, form button {
+        font-size: 0.9em;
+        padding: 8px;
+    }
+
+    table, th, td {
+        padding: 8px;
+    }
+
+    th {
+        font-size: 0.9em;
+    }
+
+    td {
+        font-size: 0.9em;
+    }
+
+    a {
+        padding: 8px 15px;
+        margin: 3px 0;
+    }
+
+    .toggle-section {
+        padding: 8px;
+    }
+
+    .toggle-content {
+        padding: 8px;
+        margin-bottom: 15px;
+    }
+
+    .radio-buttons label {
+        padding: 8px 15px;
+    }
+
+    #flash-messages {
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+    }
+}
