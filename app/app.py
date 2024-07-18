@@ -383,7 +383,7 @@ def rsvp():
             token = request.form.get('cf-turnstile-response')
             if not token:
                 flash('Please complete the Turnstile challenge.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
             response = requests.post(
                 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
                 data={
@@ -394,7 +394,7 @@ def rsvp():
             )
             if not response.json().get('success'):
                 flash('Turnstile verification failed. Please try again.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
 
         if RSVP.query.filter_by(first_name=first_name, last_name=last_name).first() or RSVP.query.filter_by(email=email).first():
             flash('You have already submitted your RSVP with this name or email.', 'warning')
@@ -418,7 +418,7 @@ def rsvp():
     last_name = request.args.get('last_name', '')
     email = request.args.get('email', '')
 
-    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email)
+    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
