@@ -405,7 +405,7 @@ def rsvp():
 
             if admin_emails := [
                 admin.email
-                for admin in Admin.query.filter_by(notifications=True).all()
+                for admin in Admin.query.filter_by(notifications=True, is_active=True).all()
             ]:
                 subject = "New RSVP Submission"
                 body = f"A new RSVP has been submitted:\n\nName: {first_name} {last_name}\nEmail: {email}\nAttending: {'Yes' if attending else 'No'}\nPhone: {phone}\nGuests: {guests}"
