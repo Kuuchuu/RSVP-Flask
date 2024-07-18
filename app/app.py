@@ -540,6 +540,17 @@ def load_theme_css():
     print(f"Theme path does not exist: {theme_path}")
     return '', 404
 
+@app.route('/reset_theme')
+@login_required
+def reset_theme():
+    set_setting('selected_theme', 'light.css')
+    with open(os.path.join(app.config['THEMES_FOLDER'], 'light.css'), 'r') as theme_css_file:
+        css_content = theme_css_file.read()
+    with open('static/style.css', 'w') as style_css_file:
+        style_css_file.write(css_content)
+    flash('Theme reset to Light.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 @app.route('/create_admin', methods=['POST'])
 @login_required
 def create_admin():
