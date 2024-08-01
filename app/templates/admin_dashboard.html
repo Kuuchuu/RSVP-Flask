@@ -26,9 +26,9 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Guests</th>
+                    {% if phone_enabled %}<th>Phone</th>{% endif %}
+                    {% if email_enabled %}<th>Email</th>{% endif %}
+                    {% if guests_enabled %}<th>Guests</th>{% endif %}
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -36,9 +36,9 @@
                 {% for rsvp in attending_rsvps %}
                 <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
                     <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
-                    <td>{{ rsvp.phone }}</td>
-                    <td>{{ rsvp.email }}</td>
-                    <td>{{ rsvp.guests }}</td>
+                    {% if phone_enabled %}<td>{{ rsvp.phone }}</td>{% endif %}
+                    {% if email_enabled %}<td>{{ rsvp.email }}</td>{% endif %}
+                    {% if guests_enabled %}<td>{{ rsvp.guests }}</td>{% endif %}
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
@@ -65,7 +65,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Email</th>
+                    {% if email_enabled %}<th>Email</th>{% endif %}
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -73,7 +73,7 @@
                 {% for rsvp in not_attending_rsvps %}
                 <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
                     <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
-                    <td>{{ rsvp.email }}</td>
+                    {% if email_enabled %}<td>{{ rsvp.email }}</td>{% endif %}
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
@@ -129,6 +129,40 @@
                 <img src="{{ qr_code_url }}" alt="QR Code">
             </div>
             {% endif %}
+        </div>
+
+        <h2 class="toggle-section">RSVP Form Settings</h2>
+        <div class="toggle-content" style="display: none;">
+            <form method="POST">
+                <input type="hidden" name="update_form_settings" value="1">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Enabled</th>
+                            <th>Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Phone</td>
+                            <td><input type="checkbox" name="phone_enabled" {% if phone_enabled %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="phone_required" {% if phone_required %}checked{% endif %}></td>
+                        </tr>
+                        <tr>
+                            <td>Guests</td>
+                            <td><input type="checkbox" name="guests_enabled" {% if guests_enabled %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="guests_required" {% if guests_required %}checked{% endif %}></td>
+                        </tr>
+                        <tr>
+                            <td>Email</td>
+                            <td><input type="checkbox" name="email_enabled" {% if email_enabled %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="email_required" {% if email_required %}checked{% endif %}></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="submit">Save Settings</button>
+            </form>
         </div>
 
         <h2 class="toggle-section">Theme</h2>

@@ -65,7 +65,7 @@ class RSVP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     guests = db.Column(db.Integer, nullable=True)
     attending = db.Column(db.Boolean, nullable=False)
@@ -115,6 +115,7 @@ def validate_password(password):
 
 def validate_phone(phone):
     return re.match(r'^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$', phone)
+    #return re.match(r'^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\\s.-]?\d{4}$', phone)
 
 def send_email(subject, body, to_addresses):
     smtp_server = strip_quotes(os.getenv('RSVP_SMTP_SERVER'))
@@ -353,37 +354,48 @@ def rsvp():
     last_name = request.args.get('last_name', '')
 
     if not is_valid_name(first_name) or not is_valid_name(last_name):
-        # flash('Invalid name format.', 'danger')
         return redirect(url_for('index'))
+
+    phone_enabled = get_setting('form_field_phone_enabled', 'true').lower() == 'true'
+    phone_required = get_setting('form_field_phone_required', 'true').lower() == 'true'
+    guests_enabled = get_setting('form_field_guests_enabled', 'true').lower() == 'true'
+    guests_required = get_setting('form_field_guests_required', 'true').lower() == 'true'
+    email_enabled = get_setting('form_field_email_enabled', 'true').lower() == 'true'
+    email_required = get_setting('form_field_email_required', 'true').lower() == 'true'
 
     if request.method == 'POST':
         first_name = request.form.get('first_name').strip()
         last_name = request.form.get('last_name').strip()
-        email = request.form.get('email').strip()
+        email = request.form.get('email').strip() if email_enabled else None
         attending = request.form.get('attending') == 'yes'
-        phone = request.form.get('phone').strip() if attending else None
-        guests = request.form.get('guests').strip() if attending else None
+        phone = request.form.get('phone').strip() if attending and phone_enabled else None
+        guests = request.form.get('guests').strip() if attending and guests_enabled else None
 
-        if not first_name or not last_name or not email:
+        if not first_name or not last_name or (email_enabled and email_required and not email):
             flash('First name, last name, and email are required.', 'danger')
-            return render_template('rsvp.html', placeholder=placeholder)
+            return render_template('rsvp.html', placeholder=placeholder, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
 
         if attending:
-            if not phone or not guests:
-                flash('Phone number and number of guests are required if attending.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder)
-            if not validate_phone(phone):
-                flash('Invalid phone number format.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder)
-            if not guests.isdigit() or int(guests) < 1:
-                flash('Number of guests must be a positive integer.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder)
+            if phone_enabled and (phone_required or phone):
+                if not phone:
+                    flash('Phone number is required if attending.', 'danger')
+                    return render_template('rsvp.html', placeholder=placeholder, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
+                if not validate_phone(phone):
+                    flash('Invalid phone number format.', 'danger')
+                    return render_template('rsvp.html', placeholder=placeholder, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
+            if guests_enabled and (guests_required or guests):
+                if not guests:
+                    flash('Number of guests is required if attending.', 'danger')
+                    return render_template('rsvp.html', placeholder=placeholder, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
+                if not guests.isdigit() or int(guests) < 1:
+                    flash('Number of guests must be a positive integer.', 'danger')
+                    return render_template('rsvp.html', placeholder=placeholder, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
 
         if TURNSTILE_SITEKEY and TURNSTILE_SECRETKEY:
             token = request.form.get('cf-turnstile-response')
             if not token:
                 flash('Please complete the Turnstile challenge.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
             response = requests.post(
                 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
                 data={
@@ -394,12 +406,25 @@ def rsvp():
             )
             if not response.json().get('success'):
                 flash('Turnstile verification failed. Please try again.', 'danger')
-                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
+                return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
 
-        if RSVP.query.filter_by(first_name=first_name, last_name=last_name).first() or RSVP.query.filter_by(email=email).first():
-            flash('You have already submitted your RSVP with this name or email.', 'warning')
+        existing_rsvp = RSVP.query.filter_by(first_name=first_name, last_name=last_name).first()
+        existing_email = RSVP.query.filter_by(email=email).first() if email else None
+
+        if existing_rsvp or (email and existing_email):
+            message = 'You have already submitted your RSVP with this name'
+            if email_enabled:
+                message += ' or email'
+            flash(f'{message}.', 'warning')
         else:
-            new_rsvp = RSVP(first_name=first_name, last_name=last_name, email=email, phone=phone, guests=int(guests) if guests else None, attending=attending)
+            new_rsvp = RSVP(
+                first_name=first_name, 
+                last_name=last_name, 
+                email=email, 
+                phone=phone, 
+                guests=int(guests) if guests else None, 
+                attending=attending
+            )
             db.session.add(new_rsvp)
             db.session.commit()
 
@@ -414,11 +439,9 @@ def rsvp():
             flash('RSVP submitted successfully!', 'success')
             return redirect(url_for('index'))
 
-    first_name = request.args.get('first_name', '')
-    last_name = request.args.get('last_name', '')
-    email = request.args.get('email', '')
+    email = request.args.get('email', '') if email_enabled else ''
 
-    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY)
+    return render_template('rsvp.html', placeholder=placeholder, first_name=first_name, last_name=last_name, email=email, turnstile_sitekey=TURNSTILE_SITEKEY, phone_enabled=phone_enabled, phone_required=phone_required, guests_enabled=guests_enabled, guests_required=guests_required, email_enabled=email_enabled, email_required=email_required)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
@@ -535,6 +558,20 @@ def admin_dashboard():
                     style_css_file.write(css_content)
             os.utime(os.path.join(app.static_folder, 'style.css'), None)
             flash('Theme updated successfully!', 'success')
+        elif 'update_form_settings' in request.form:
+            phone_enabled = 'phone_enabled' in request.form
+            phone_required = 'phone_required' in request.form
+            guests_enabled = 'guests_enabled' in request.form
+            guests_required = 'guests_required' in request.form
+            email_enabled = 'email_enabled' in request.form
+            email_required = 'email_required' in request.form
+            set_setting('form_field_phone_enabled', str(phone_enabled))
+            set_setting('form_field_phone_required', str(phone_required))
+            set_setting('form_field_guests_enabled', str(guests_enabled))
+            set_setting('form_field_guests_required', str(guests_required))
+            set_setting('form_field_email_enabled', str(email_enabled))
+            set_setting('form_field_email_required', str(email_required))
+            flash('RSVP form settings updated successfully!', 'success')
     
     if rsvp_table_exists:
         attending_rsvps = RSVP.query.filter_by(attending=True).all()
@@ -552,7 +589,29 @@ def admin_dashboard():
             custom_css = custom_css_file.read()
 
     themes = [os.path.basename(theme) for theme in glob.glob(os.path.join(app.config['THEMES_FOLDER'], '*.css'))]
-    return render_template('admin_dashboard.html', attending_rsvps=attending_rsvps, not_attending_rsvps=not_attending_rsvps, admins=admins, qr_code_url=qr_code_url, placeholder=placeholder, current_theme=current_theme, custom_css=custom_css, themes=themes)
+    
+    phone_enabled = get_setting('form_field_phone_enabled', 'true').lower() == 'true'
+    phone_required = get_setting('form_field_phone_required', 'true').lower() == 'true'
+    guests_enabled = get_setting('form_field_guests_enabled', 'true').lower() == 'true'
+    guests_required = get_setting('form_field_guests_required', 'true').lower() == 'true'
+    email_enabled = get_setting('form_field_email_enabled', 'true').lower() == 'true'
+    email_required = get_setting('form_field_email_required', 'true').lower() == 'true'
+
+    return render_template('admin_dashboard.html', 
+        attending_rsvps=attending_rsvps, 
+        not_attending_rsvps=not_attending_rsvps, 
+        admins=admins, 
+        qr_code_url=qr_code_url, 
+        placeholder=placeholder, 
+        current_theme=current_theme, 
+        custom_css=custom_css, 
+        themes=themes, 
+        phone_enabled=phone_enabled, 
+        phone_required=phone_required, 
+        guests_enabled=guests_enabled, 
+        guests_required=guests_required, 
+        email_enabled=email_enabled, 
+        email_required=email_required)
 
 @app.route('/load_theme_css')
 @login_required

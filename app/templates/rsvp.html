@@ -30,8 +30,10 @@
             <input type="text" id="first_name" name="first_name" value="{{ first_name }}" placeholder="{{ placeholder.first_name }}" required><br>
             <label for="last_name">Last Name:</label>
             <input type="text" id="last_name" name="last_name" value="{{ last_name }}" placeholder="{{ placeholder.last_name }}" required><br>
+            {% if email_enabled %}
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="{{ email }}" placeholder="{{ placeholder.email }}" required><br>
+            <input type="email" id="email" name="email" value="{{ email }}" placeholder="{{ placeholder.email }}" {% if email_required %}required{% endif %}><br>
+            {% endif %}
             <label>Will you be attending?</label><br>
             <div class="radio-buttons">
                 <input type="radio" id="attending_yes" name="attending" value="yes" onclick="toggleFields()" required>
@@ -40,10 +42,14 @@
                 <label for="attending_no">No</label>
             </div>
             <div id="attending-fields" style="display:none;">
+                {% if phone_enabled %}
                 <label for="phone">Phone Number:</label>
-                <input type="tel" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx"><br>
+                <input type="tel" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx" {% if phone_required %}required{% endif %}><br>
+                {% endif %}
+                {% if guests_enabled %}
                 <label for="guests">Number of Guests:</label>
-                <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1"><br>
+                <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1" {% if guests_required %}required{% endif %}><br>
+                {% endif %}
             </div>
             {% if turnstile_sitekey %}
             <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}"></div>
