@@ -52,7 +52,13 @@
                 {% endif %}
             </div>
             {% if turnstile_sitekey %}
-            <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}"></div>
+            <div style="display: block; flex-flow: row;">
+                <div
+                  class="cf-turnstile"
+                  data-sitekey="{{ turnstile_sitekey }}"
+                  data-size="flexible"
+                ></div>
+              </div>
             {% endif %}
             <button type="submit">Submit</button>
         </form>
