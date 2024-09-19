@@ -265,6 +265,7 @@ a.registry-link:hover {
 @media (pointer:none), (pointer:coarse) {
     .container {
         width: 85%;
+        border-radius: 15px;
     }
 
     .h0 {
@@ -314,14 +315,26 @@ a.registry-link:hover {
         border-radius: 15px;
     }
 
-    .container {
-        border-radius: 15px;
-    }
-
     a.registry-link {
         font-size: 5em;
         margin-bottom:.5em;
         margin-left:.5em;
         margin-right:.5em;
+    }
+
+    .adm-btn {
+        font-size: 3em;
+    }
+
+    .adm-txt {
+        font-size: 3em;
+    }
+
+    .adm-cell {
+        font-size: 3em;
+    }
+
+    .adm-header{
+        font-size: 4em;
     }
 }

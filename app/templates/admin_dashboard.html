@@ -31,7 +31,7 @@
         </h4>{% endif %}
         <table>
             <thead>
-                <tr>
+                <tr class="adm-header">
                     <th>Name</th>
                     {% if phone_enabled %}<th>Phone</th>{% endif %}
                     {% if email_enabled %}<th>Email</th>{% endif %}
@@ -42,23 +42,23 @@
             <tbody>
                 {% for rsvp in attending_rsvps %}
                 <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
-                    <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
-                    {% if phone_enabled %}<td>{{ rsvp.phone }}</td>{% endif %}
-                    {% if email_enabled %}<td>{{ rsvp.email }}</td>{% endif %}
-                    {% if guests_enabled %}<td>{{ rsvp.guests }}</td>{% endif %}
+                    <td class="adm-cell">{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
+                    {% if phone_enabled %}<td class="adm-cell">{{ rsvp.phone }}</td>{% endif %}
+                    {% if email_enabled %}<td class="adm-cell">{{ rsvp.email }}</td>{% endif %}
+                    {% if guests_enabled %}<td class="adm-cell">{{ rsvp.guests }}</td>{% endif %}
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
-                            <button type="submit" id="cross-out-btn-{{ rsvp.id }}" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
+                            <button type="submit" class="adm-btn" id="cross-out-btn-{{ rsvp.id }}" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
                         </form>
                         <form method="POST" id="delete-form-rsvp-{{ rsvp.id }}" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
                             <input type="hidden" name="delete_rsvp" value="1">
-                            <input type="button" id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')" value="Delete">
+                            <input type="button" class="adm-btn" id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')" value="Delete">
                             <div id="confirm-box-rsvp-{{ rsvp.id }}" style="display:none;">
-                                <input type="text" name="confirm_email" placeholder="Confirm Email" required>
-                                <button type="button" onclick="submitForm('delete-form-rsvp-{{ rsvp.id }}')">Confirm Delete</button>
-                                <button type="button" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
+                                <input type="text" class="adm-txt" name="confirm_email" placeholder="Confirm Email" required>
+                                <button type="button" class="adm-btn" onclick="submitForm('delete-form-rsvp-{{ rsvp.id }}')">Confirm Delete</button>
+                                <button type="button" class="adm-btn" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
                             </div>
                         </form>
                     </td>
@@ -77,7 +77,7 @@
         </h4>{% endif %}
         <table>
             <thead>
-                <tr>
+                <tr class="adm-header">
                     <th>Name</th>
                     {% if email_enabled %}<th>Email</th>{% endif %}
                     <th>Actions</th>
@@ -86,21 +86,21 @@
             <tbody>
                 {% for rsvp in not_attending_rsvps %}
                 <tr style="text-decoration: {{ 'line-through' if rsvp.crossed_out else 'none' }}">
-                    <td>{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
-                    {% if email_enabled %}<td>{{ rsvp.email }}</td>{% endif %}
+                    <td class="adm-cell">{{ rsvp.first_name }} {{ rsvp.last_name }}</td>
+                    {% if email_enabled %}<td class="adm-cell">{{ rsvp.email }}</td>{% endif %}
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
-                            <button type="submit" id="cross-out-btn-{{ rsvp.id }}" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
+                            <button type="submit" class="adm-btn" id="cross-out-btn-{{ rsvp.id }}" name="cross_out_rsvp" value="1">{{ 'Uncross' if rsvp.crossed_out else 'Cross Out' }}</button>
                         </form>
                         <form method="POST" id="delete-form-rsvp-{{ rsvp.id }}" style="display:inline;">
                             <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
                             <input type="hidden" name="delete_rsvp" value="1">
-                            <input type="button" id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')" value="Delete">
+                            <input type="button" class="adm-btn" id="delete-btn-rsvp-{{ rsvp.id }}" onclick="showConfirmation({{ rsvp.id }}, 'rsvp')" value="Delete">
                             <div id="confirm-box-rsvp-{{ rsvp.id }}" style="display:none;">
-                                <input type="text" name="confirm_email" placeholder="Confirm Email" required>
-                                <button type="button" onclick="submitForm('delete-form-rsvp-{{ rsvp.id }}')">Confirm Delete</button>
-                                <button type="button" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
+                                <input type="text" class="adm-txt" name="confirm_email" placeholder="Confirm Email" required>
+                                <button type="button" class="adm-btn" onclick="submitForm('delete-form-rsvp-{{ rsvp.id }}')">Confirm Delete</button>
+                                <button type="button" class="adm-btn" onclick="cancelDeletion({{ rsvp.id }}, 'rsvp')">Cancel</button>
                             </div>
                         </form>
                     </td>
@@ -112,30 +112,30 @@
         <h2 class="toggle-section">Generate QR Code</h2>
         <div class="toggle-content" style="display: none;">
             <form method="POST" action="{{ url_for('generate_generic_qr_code') }}">
-                <button type="submit">Generate Generic QR Code</button>
+                <button type="submit" class="adm-btn">Generate Generic QR Code</button>
             </form>
             <hr>
             <form method="POST" action="{{ url_for('generate_qr_code') }}">
                 <label for="first_name">First Name:</label>
-                <input type="text" id="first_name" name="first_name" placeholder="{{ placeholder.first_name }}" required><br>
+                <input type="text" class="adm-txt" id="first_name" name="first_name" placeholder="{{ placeholder.first_name }}" required><br>
                 <label for="last_name">Last Name:</label>
-                <input type="text" id="last_name" name="last_name" placeholder="{{ placeholder.last_name }}" required><br>
+                <input type="text" class="adm-txt" id="last_name" name="last_name" placeholder="{{ placeholder.last_name }}" required><br>
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" placeholder="{{ placeholder.email }} (optional)"><br>
+                <input type="email" class="adm-txt" id="email" name="email" placeholder="{{ placeholder.email }} (optional)"><br>
                 <label for="phone">Phone Number:</label>
-                <input type="tel" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx (optional)"><br>
+                <input type="tel" class="adm-txt" id="phone" name="phone" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="xxx-xxx-xxxx (optional)"><br>
                 <label for="guests">Number of Guests:</label>
-                <input type="number" min="1" max="20" id="guests" name="guests" placeholder="1 (optional)"><br>
-                <button type="submit">Generate Personalized QR Code</button>
+                <input type="number" class="adm-txt" min="1" max="20" id="guests" name="guests" placeholder="1 (optional)"><br>
+                <button type="submit" class="adm-btn">Generate Personalized QR Code</button>
             </form>
             <hr>
             <form method="GET" action="{{ url_for('download_template_csv') }}">
-                <button type="submit">Download Template CSV</button>
+                <button type="submit" class="adm-btn">Download Template CSV</button>
             </form>
             <form method="POST" action="{{ url_for('generate_qr_codes_from_csv') }}" enctype="multipart/form-data">
                 <label for="csv_file">Upload CSV File:</label>
-                <input type="file" id="csv_file" name="csv_file" accept=".csv" required><br>
-                <button type="submit">Generate QR Codes from CSV</button>
+                <input type="file" class="adm-txt" id="csv_file" name="csv_file" accept=".csv" required><br>
+                <button type="submit" class="adm-btn">Generate QR Codes from CSV</button>
             </form>
             {% if qr_code_url %}
             <div>
@@ -151,13 +151,13 @@
                 <input type="hidden" name="update_form_settings" value="1">
                 <table>
                     <thead>
-                        <tr>
+                        <tr class="adm-header">
                             <th>Field</th>
                             <th>Enabled</th>
                             <th>Required</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="adm-cell">
                         <tr>
                             <td>Phone</td>
                             <td><input type="checkbox" name="phone_enabled" {% if phone_enabled %}checked{% endif %}></td>
@@ -175,7 +175,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <button type="submit">Save Settings</button>
+                <button type="submit" class="adm-btn">Save Settings</button>
             </form>
         </div>
 
@@ -183,7 +183,7 @@
         <div class="toggle-content" style="display: none;">
             <form method="POST">
                 <label for="theme">Select Theme:</label>
-                <select id="theme" name="theme">
+                <select class="adm-cell" id="theme" name="theme">
                     {% for theme in themes %}
                         {% if theme != 'custom.css' %}
                             <option value="{{ theme }}" {% if current_theme == theme %}selected{% endif %}>{{ theme.replace('.css', '').replace('_', ' ').title() }}</option>
@@ -195,7 +195,7 @@
                 <label for="custom_css">Selected Theme CSS:</label>
                 <textarea id="custom_css" name="custom_css" rows="10" cols="50">{{ custom_css }}</textarea>
                 <br>
-                <button type="submit">Save Theme</button>
+                <button type="submit" class="adm-btn">Save Theme</button>
             </form>
         </div>
 
@@ -204,19 +204,19 @@
             <form method="POST">
                 <input type="hidden" name="change_password" value="1">
                 <label for="current_password">Current Password:</label>
-                <input type="password" id="current_password" name="current_password" required><br>
+                <input type="password" class="adm-txt" id="current_password" name="current_password" required><br>
                 <label for="new_password">New Password:</label>
-                <input type="password" id="new_password" name="new_password" required><br>
+                <input type="password" class="adm-txt" id="new_password" name="new_password" required><br>
                 <label for="confirm_new_password">Confirm New Password:</label>
-                <input type="password" id="confirm_new_password" name="confirm_new_password" required><br>
-                <button type="submit">Change Password</button>
+                <input type="password" class="adm-txt" id="confirm_new_password" name="confirm_new_password" required><br>
+                <button type="submit" class="adm-btn">Change Password</button>
             </form>
         </div>
 
         <h2 class="toggle-section">Admin List</h2>
         <div class="toggle-content" style="display: none;">
             <table>
-                <thead>
+                <thead class="adm-header">
                     <tr>
                         <th>Username</th>
                         <th>Email</th>
@@ -228,10 +228,10 @@
                 <tbody>
                     {% for admin in admins %}
                     <tr>
-                        <td>{{ admin.username }}</td>
-                        <td>{{ admin.email }}</td>
-                        <td>{{ 'Yes' if admin.is_active else 'No' }}</td>
-                        <td>
+                        <td class="adm-cell">{{ admin.username }}</td>
+                        <td class="adm-cell">{{ admin.email }}</td>
+                        <td class="adm-cell">{{ 'Yes' if admin.is_active else 'No' }}</td>
+                        <td class="adm-cell">
                             {% if admin.id == current_user.id %}
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="admin_id" value="{{ admin.id }}">
@@ -246,23 +246,23 @@
                             {% if admin.is_active and admin.id != current_user.id %}
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="admin_id" value="{{ admin.id }}">
-                                <button type="submit" name="disable_admin" value="1">Disable</button>
+                                <button type="submit" class="adm-btn" name="disable_admin" value="1">Disable</button>
                             </form>
                             {% elif not admin.is_active %}
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="admin_id" value="{{ admin.id }}">
-                                <button type="submit" name="enable_admin" value="1">Enable</button>
+                                <button type="submit" class="adm-btn" name="enable_admin" value="1">Enable</button>
                             </form>
                             {% endif %}
                             {% if admin.id != current_user.id %}
                             <form method="POST" id="delete-form-admin-{{ admin.id }}" style="display:inline;">
                                 <input type="hidden" name="admin_id" value="{{ admin.id }}">
                                 <input type="hidden" name="delete_admin" value="1">
-                                <input type="button" id="delete-btn-admin-{{ admin.id }}" onclick="showConfirmation({{ admin.id }}, 'admin')" value="Delete">
+                                <input type="button" class="adm-btn" id="delete-btn-admin-{{ admin.id }}" onclick="showConfirmation({{ admin.id }}, 'admin')" value="Delete">
                                 <div id="confirm-box-admin-{{ admin.id }}" style="display:none;">
-                                    <input type="text" name="confirm_username" placeholder="Confirm Username" required>
-                                    <button type="button" onclick="submitForm('delete-form-admin-{{ admin.id }}')">Confirm Delete</button>
-                                    <button type="button" onclick="cancelDeletion({{ admin.id }}, 'admin')">Cancel</button>
+                                    <input type="text" class="adm-txt" name="confirm_username" placeholder="Confirm Username" required>
+                                    <button type="button" class="adm-btn" onclick="submitForm('delete-form-admin-{{ admin.id }}')">Confirm Delete</button>
+                                    <button type="button" class="adm-btn" onclick="cancelDeletion({{ admin.id }}, 'admin')">Cancel</button>
                                 </div>
                             </form>
                             {% endif %}
@@ -274,16 +274,16 @@
             <form method="POST" action="{{ url_for('create_admin') }}">
                 <h3>Create New Admin</h3>
                 <label for="new_admin_username">Username:</label>
-                <input type="text" id="new_admin_username" name="new_admin_username" required><br>
+                <input type="text" class="adm-txt" id="new_admin_username" name="new_admin_username" required><br>
                 <label for="new_admin_email">Email:</label>
-                <input type="email" id="new_admin_email" name="new_admin_email" required><br>
+                <input type="email" class="adm-txt" id="new_admin_email" name="new_admin_email" required><br>
                 <label for="new_admin_password">Password:</label>
-                <input type="password" id="new_admin_password" name="new_admin_password" required><br>
-                <button type="submit">Create Admin</button>
+                <input type="password" class="adm-txt" id="new_admin_password" name="new_admin_password" required><br>
+                <button type="submit" class="adm-btn">Create Admin</button>
             </form>
         </div>        
 
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <a  class="adm-btn" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </body>
 </html>
