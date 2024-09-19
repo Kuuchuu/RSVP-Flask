@@ -30,9 +30,9 @@ body {
 
 .h0 {
     font-family: 'Cedarville Cursive', cursive;
-    font-size: 3em;
+    font-size: 8em;
     color: #d8a8a8;
-    margin-bottom: -1.05em;
+    margin-bottom: -0.80em;
 }
 
 header {
@@ -42,16 +42,21 @@ header {
     margin-bottom: 20px;
 }
 
-header h1 {
+h1 {
     margin: 0;
+    margin-top: 1em;
     font-size: 2.5em;
-    color: #d8a8a8;
+    color: #000000;
+    /* color: #d8a8a8; */
 }
 
-header h2 {
+h2 {
     margin: 0;
+    margin-top: 1em;
+    margin-bottom: 1em;
     font-size: 1.5em;
-    color: #a67c7c;
+    color: #000000;
+    /* color: #a67c7c; */
 }
 
 form {
@@ -237,66 +242,75 @@ a.registry-link:hover {
 }
 
 @media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
+    /* body {
+        background-color: #f195f1;
+    } */
 
     .container {
-        padding: 15px;
-        box-shadow: none;
+        width: 85%;
     }
 
-    header {
-        padding: 10px 0;
-        margin-bottom: 15px;
+    .h0 {
+        font-size: 8em;
+        margin-bottom: -1.05em;
+    }
+}
+
+@media (pointer:none), (pointer:coarse) {
+    .container {
+        width: 85%;
     }
 
-    header h1 {
-        font-size: 2em;
+    .h0 {
+        font-size: 8em;
+        margin-bottom: -0.8em;
     }
 
-    header h2 {
-        font-size: 1.2em;
+    h1 {
+        margin-top: 1em;
+        font-size: 3.5em;
+    }
+    
+    h2 {
+        margin-top: 1em;
+        font-size: 3em;
+        margin-bottom: 1em;
     }
 
-    form input, form select, form button {
-        font-size: 0.9em;
-        padding: 8px;
+    h3 {
+        margin-top: 1em;
+        font-size: 3.5em;
+        margin-bottom: 1em;
     }
 
-    table, th, td {
-        padding: 8px;
+    form label {
+        font-size: 3.5em;
+    }
+    
+    form input {
+        max-width: 90%;
+        font-size: 5em;
+        border-radius: 15px;
     }
 
-    th {
-        font-size: 0.9em;
-    }
-
-    td {
-        font-size: 0.9em;
+    form button {
+        max-width: 90%;
+        font-size: 5em;
+        border-radius: 15px;
     }
 
     a {
-        padding: 8px 15px;
-        margin: 3px 0;
+        border-radius: 15px;
     }
 
-    .toggle-section {
-        padding: 8px;
+    .container {
+        border-radius: 15px;
     }
 
-    .toggle-content {
-        padding: 8px;
-        margin-bottom: 15px;
-    }
-
-    .radio-buttons label {
-        padding: 8px 15px;
-    }
-
-    #flash-messages {
-        top: 10px;
-        right: 10px;
-        padding: 10px;
+    a.registry-link {
+        font-size: 5em;
+        margin-bottom:.5em;
+        margin-left:.5em;
+        margin-right:.5em;
     }
 }

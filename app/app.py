@@ -576,9 +576,28 @@ def admin_dashboard():
     if rsvp_table_exists:
         attending_rsvps = RSVP.query.filter_by(attending=True).all()
         not_attending_rsvps = RSVP.query.filter_by(attending=False).all()
+
+        guests_enabled = get_setting('form_field_guests_enabled', 'true').lower() == 'true'
+        guests_required = get_setting('form_field_guests_required', 'false').lower() == 'true'
+        def calculate_total_guests(rsvps):
+            total_guests = 0
+            for rsvp in rsvps:
+                if guests_enabled:
+                    if rsvp.guests is None or rsvp.guests < 1:
+                        total_guests += 1
+                    else:
+                        total_guests += rsvp.guests
+                else:
+                    total_guests += 1
+            return total_guests
+
+        total_attending_guests = calculate_total_guests(attending_rsvps)
+        total_not_attending_guests = len(not_attending_rsvps)
     else:
         attending_rsvps = []
         not_attending_rsvps = []
+        total_attending_guests = 0
+        total_not_attending_guests = 0
 
     admins = Admin.query.all() if admin_table_exists else []
 
@@ -600,6 +619,8 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', 
         attending_rsvps=attending_rsvps, 
         not_attending_rsvps=not_attending_rsvps, 
+        total_attending_guests=total_attending_guests, 
+        total_not_attending_guests=total_not_attending_guests, 
         admins=admins, 
         qr_code_url=qr_code_url, 
         placeholder=placeholder, 
@@ -611,7 +632,8 @@ def admin_dashboard():
         guests_enabled=guests_enabled, 
         guests_required=guests_required, 
         email_enabled=email_enabled, 
-        email_required=email_required)
+        email_required=email_required
+    )
 
 @app.route('/load_theme_css')
 @login_required
