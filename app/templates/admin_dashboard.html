@@ -22,7 +22,13 @@
 
         <h1>RSVP List</h1>
         <h2>Attending</h2>
-        <h3>{{ total_attending_guests }}</h3>
+        <h3>
+            {{ total_attending_guests }}
+        </h3>
+        {% if crossed_out_attending_guests > 0 %}<h4>
+            <br>
+            <strike title="Total crossed out guests">{{ crossed_out_attending_guests }}</strike>
+        </h4>{% endif %}
         <table>
             <thead>
                 <tr>
@@ -62,7 +68,13 @@
         </table>
 
         <h2>Not Attending</h2>
-        <h3>{{ total_not_attending_guests }}</h3>
+        <h3>
+            {{ total_not_attending_guests }}
+        </h3>
+        {% if crossed_out_not_attending_guests > 0 %}<h4>
+            <br>
+            <strike title="Total crossed out guests">{{ crossed_out_not_attending_guests }}</strike>
+        </h4>{% endif %}
         <table>
             <thead>
                 <tr>
